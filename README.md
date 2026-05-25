@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MCP Security Copilot (Next.js Demo)
+
+This is a [Next.js](https://nextjs.org) demo app that connects to a Model Context Protocol (MCP) server and lets you ask questions about container assets and vulnerabilities. It supports both REST and GraphQL MCP backends and uses [shadcn/ui](https://ui.shadcn.com) for the UI.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the Next.js dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## MCP Client & SDK
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Install the MCP client SDKs used by the app:
 
-## Learn More
+```bash
+npm install @ai-sdk/mcp @modelcontextprotocol/sdk
+```
 
-To learn more about Next.js, take a look at the following resources:
+The Next.js API routes use these packages to talk to the MCP server over HTTP.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## shadcn/ui and Theming Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Initialize shadcn if you haven’t already:
 
-## Deploy on Vercel
+```bash
+npx shadcn@latest init
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Add the UI components used in this app:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx shadcn@latest add card
+npx shadcn@latest add input
+npx shadcn@latest add button
+npx shadcn@latest add scroll-area
+npx shadcn@latest add separator
+npx shadcn@latest add badge
+npx shadcn@latest add dropdown-menu
+```
+
+Install theme support:
+
+```bash
+npm install next-themes
+```
+
+The app uses `next-themes` together with shadcn’s Tailwind tokens to support light/dark mode.
+## Setup OPENAI_API_KEY
+
+setup the key in .env.local
+
+OPENAI_API_KEY=your_openapi_key
+
+## Running With GraphQL MCP Backend
+
+To route the app through your GraphQL-based MCP server, set:
+
+```bash
+export MCP_HTTP_URL=http://127.0.0.1:8000/mcp
+export MCP_BACKEND=graph
+```
+
+Then (re)start the Next.js dev server:
+
+```bash
+npm run dev
+```
+
+## Running With REST MCP Backend
+
+To route the app through your REST-based MCP server, set:
+
+```bash
+export MCP_HTTP_URL=http://127.0.0.1:8001/mcp
+export MCP_BACKEND=rest
+```
+
+Then (re)start the Next.js dev server:
+
+```bash
+npm run dev
+```
+
+The app will read `MCP_HTTP_URL` to know where the MCP server is listening and `MCP_BACKEND` to decide how to prompt the LLM (REST-style vs GraphQL-style routing).

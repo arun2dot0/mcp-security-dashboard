@@ -1,65 +1,450 @@
-import Image from "next/image";
+// app/page.tsx
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { ModeToggle } from "@/components/mode-toggle"; // optional theme toggle
+
+type ChatMessage = {
+  role: "user" | "assistant" | "system";
+  content: string;
+};
+
+type UiList = {
+  type: "list";
+  title: string;
+  items: any[];
+};
+
+type UiData = {
+  type: "data";
+  title: string;
+  data: any;
+};
+
+type UiSummary = {
+  type: "summary";
+  title: string;
+  text: string;
+};
+
+type UiResponse = UiList | UiData | UiSummary;
+
+function severityBadge(sev: string) {
+  const s = sev.toUpperCase();
+  if (s === "CRITICAL") {
+    return (
+      <Badge variant="destructive" className="text-[10px]">
+        {s}
+      </Badge>
+    );
+  }
+  if (s === "HIGH") {
+    return (
+      <Badge variant="destructive" className="bg-red-500/80 text-[10px]">
+        {s}
+      </Badge>
+    );
+  }
+  if (s === "MEDIUM") {
+    return (
+      <Badge variant="outline" className="border-amber-500/70 text-amber-500 text-[10px]">
+        {s}
+      </Badge>
+    );
+  }
+  if (s === "LOW") {
+    return (
+      <Badge variant="outline" className="border-emerald-500/70 text-emerald-500 text-[10px]">
+        {s}
+      </Badge>
+    );
+  }
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <Badge variant="outline" className="text-[10px]">
+      {sev}
+    </Badge>
+  );
+}
+
+function JsonRenderer({ value }: { value: any }) {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    // Try to render severity nicely when it's a plain field
+    if (typeof value === "string" && ["low", "medium", "high", "critical"].includes(value.toLowerCase())) {
+      return severityBadge(value);
+    }
+    return <span>{String(value)}</span>;
+  }
+
+  if (Array.isArray(value)) {
+    const first = value[0];
+
+    // If array of objects with similar keys -> nicer data table
+    if (first && typeof first === "object" && !Array.isArray(first)) {
+      const allKeys = new Set<string>();
+      for (const row of value) {
+        if (row && typeof row === "object") {
+          Object.keys(row).forEach((k) => allKeys.add(k));
+        }
+      }
+      const keys = Array.from(allKeys);
+
+      return (
+        <div className="overflow-x-auto rounded-md border border-border bg-card">
+          <table className="min-w-full text-xs">
+            <thead>
+              <tr className="bg-muted/60">
+                {keys.map((k) => (
+                  <th
+                    key={k}
+                    className="px-3 py-1.5 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+                  >
+                    {k}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {value.map((row, i) => (
+                <tr
+                  key={i}
+                  className="border-t border-border/60 odd:bg-background even:bg-muted/40 hover:bg-muted/70 transition-colors"
+                >
+                  {keys.map((k) => (
+                    <td key={k} className="px-3 py-1.5 align-top">
+                      <JsonRenderer value={(row as any)[k]} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      );
+    }
+
+    // Generic list
+    return (
+      <ul className="list-disc list-inside text-xs space-y-1">
+        {value.map((item, i) => (
+          <li key={i}>
+            <JsonRenderer value={item} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  // Object: key/value pairs, nested renderer
+  const entries = Object.entries(value);
+  return (
+    <div className="rounded-md border border-border bg-card p-2 text-xs space-y-1">
+      {entries.map(([k, v]) => (
+        <div key={k} className="flex gap-1">
+          <span className="font-semibold text-muted-foreground">{k}:</span>
+          <div className="flex-1">
+            <JsonRenderer value={v} />
+          </div>
         </div>
-      </main>
+      ))}
     </div>
+  );
+}
+
+function MessageBubble({ message }: { message: ChatMessage }) {
+  let parsed: UiResponse | null = null;
+  try {
+    const obj = JSON.parse(message.content);
+    if (obj && typeof obj === "object" && "type" in obj && "title" in obj) {
+      parsed = obj as UiResponse;
+    }
+  } catch {
+    // not JSON UI payload
+  }
+
+  if (parsed) {
+    if (parsed.type === "summary") {
+      return (
+        <Card className="inline-block max-w-full bg-muted">
+          <CardHeader className="py-2">
+            <CardTitle className="text-sm">{parsed.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+              {parsed.text}
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (parsed.type === "list") {
+      return (
+        <Card className="inline-block max-w-full bg-muted">
+          <CardHeader className="py-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm">{parsed.title}</CardTitle>
+            <Badge variant="outline" className="text-[10px]">
+              {parsed.items.length} items
+            </Badge>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <JsonRenderer value={parsed.items} />
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (parsed.type === "data") {
+      return (
+        <Card className="inline-block max-w-full bg-muted">
+          <CardHeader className="py-2">
+            <CardTitle className="text-sm">{parsed.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <JsonRenderer value={parsed.data} />
+          </CardContent>
+        </Card>
+      );
+    }
+  }
+
+  const isUser = message.role === "user";
+  return (
+    <div
+      className={
+        "inline-block max-w-full rounded-2xl px-3 py-2 text-sm " +
+        (isUser
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted text-foreground")
+      }
+    >
+      <pre className="whitespace-pre-wrap text-sm overflow-x-auto">
+        {message.content}
+      </pre>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content:
+        "Hi! Ask me about container assets or vulnerabilities, and I will call the MCP tools.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const nextMessages = [...messages, { role: "user", content: input }];
+    setMessages(nextMessages);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: nextMessages }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data.messages)) {
+        setMessages(data.messages);
+      } else {
+        console.error("Unexpected response shape", data);
+      }
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Error calling MCP chat API." },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function runPreset(question: string) {
+    setInput(question);
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-background via-background to-muted/40 text-foreground flex flex-col">
+      {/* Top bar */}
+      <header className="border-b border-border/60 px-4 py-3 flex items-center justify-between bg-background/80 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">
+            MCP
+          </span>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold tracking-tight">
+              Security Copilot
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Backed by your MCP demo (REST + GraphQL).
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <ModeToggle />
+        </div>
+      </header>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 px-4 py-6 max-w-6xl mx-auto w-full">
+        {/* Left panel: presets */}
+        <div className="w-full lg:w-72 flex-shrink-0 space-y-3">
+          <Card className="h-full border-border/70">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Quick queries</CardTitle>
+              <CardDescription className="text-[11px]">
+                Use these as starting points for your demo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs"
+                onClick={() =>
+                  runPreset(
+                    "List all public container assets in prod with CVEs and severity.",
+                  )
+                }
+              >
+                Public prod containers with CVEs
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs"
+                onClick={() =>
+                  runPreset(
+                    "Show containers running as root and summarize their CVEs.",
+                  )
+                }
+              >
+                Containers running as root
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs"
+                onClick={() =>
+                  runPreset(
+                    "Give me recent CRITICAL CVEs affecting my containers.",
+                  )
+                }
+              >
+                Recent CRITICAL CVEs
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs"
+                onClick={() =>
+                  runPreset(
+                    "Generate a prioritized remediation plan for production assets, grouped by severity and estimated effort.show affected assets",
+                  )
+                }
+              >
+                Complex Remediation Query
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right panel: chat */}
+        <div className="flex-1 flex flex-col">
+          <Card className="flex-1 flex flex-col shadow-lg border-border/70">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">
+                Ask about container assets & CVEs
+              </CardTitle>
+              <CardDescription className="text-[11px]">
+                The assistant routes your question to the appropriate MCP tool
+                and returns a structured summary.
+              </CardDescription>
+            </CardHeader>
+            <Separator />
+            <CardContent className="pt-4 flex-1 flex flex-col">
+              <ScrollArea className="h-[420px] pr-2">
+                <div className="flex flex-col gap-3">
+                  {messages.map((m, i) => (
+                    <div
+                      key={i}
+                      className={
+                        "flex " +
+                        (m.role === "user" ? "justify-end" : "justify-start")
+                      }
+                    >
+                      <MessageBubble message={m} />
+                    </div>
+                  ))}
+
+                  {loading && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="inline-block h-3 w-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+                      <span>Thinking…</span>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+            <Separator />
+            <CardFooter className="pt-3">
+              <form
+                onSubmit={sendMessage}
+                className="flex w-full items-center gap-2"
+              >
+                <Input
+                  className="text-sm"
+                  placeholder="Ask about container assets or CVEs..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={loading}
+                />
+                <Button type="submit" size="sm" disabled={loading}>
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block h-3 w-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                      <span>Sending</span>
+                    </span>
+                  ) : (
+                    "Send"
+                  )}
+                </Button>
+              </form>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    </main>
   );
 }
