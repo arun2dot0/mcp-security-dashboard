@@ -93,6 +93,15 @@ npm run dev
 
 The app will read `MCP_HTTP_URL` to know where the MCP server is listening and `MCP_BACKEND` to decide how to prompt the LLM (REST-style vs GraphQL-style routing).
 
+
+## Models
+This uses OpenAI models for the LLM , you can switch the models by setting them 
+as enviornment variables or updating .env.local
+```
+MCP_ROUTER_MODEL=gpt-4o-mini
+MCP_FORMATTER_MODEL=gpt-4o-mini
+```
+
 ## Prompts 
 
 ### complex
@@ -107,3 +116,15 @@ find public containers that are also root --
 find name and environment for container assets with tag auth --
 Give me recent CRITICAL CVEs affecting my containers.
 
+### sample .env.local
+```
+OPENAI_API_KEY=sk-proj-...
+MCP_HTTP_URL=http://localhost:8000/mcp
+MCP_SIDECAR_URL=http://127.0.0.1:9000
+
+MCP_ROUTER_MODEL=gpt-4o-mini
+MCP_FORMATTER_MODEL=gpt-4o-mini
+
+MCP_HTTP_URL=http://127.0.0.1:8000/mcp
+```
+MCP_BACKEND=graph

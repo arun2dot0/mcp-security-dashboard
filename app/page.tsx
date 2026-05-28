@@ -79,76 +79,36 @@ function severityBadge(sev: string) {
   );
 }
 
-function JsonRenderer({ value }: { value: any }) {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
-    // Try to render severity nicely when it's a plain field
-    if (typeof value === "string" && ["low", "medium", "high", "critical"].includes(value.toLowerCase())) {
-      return severityBadge(value);
-    }
+
+  type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+function JsonRenderer({ value }: { value: JsonValue }) {
+  // Null or undefined
+  if (value === null || value === undefined) {
+    return <span className="text-muted-foreground">null</span>;
+  }
+
+  // Primitive
+  if (typeof value !== "object") {
     return <span>{String(value)}</span>;
   }
 
+  // Array
   if (Array.isArray(value)) {
-    const first = value[0];
-
-    // If array of objects with similar keys -> nicer data table
-    if (first && typeof first === "object" && !Array.isArray(first)) {
-      const allKeys = new Set<string>();
-      for (const row of value) {
-        if (row && typeof row === "object") {
-          Object.keys(row).forEach((k) => allKeys.add(k));
-        }
-      }
-      const keys = Array.from(allKeys);
-
-      return (
-        <div className="overflow-x-auto rounded-md border border-border bg-card">
-          <table className="min-w-full text-xs">
-            <thead>
-              <tr className="bg-muted/60">
-                {keys.map((k) => (
-                  <th
-                    key={k}
-                    className="px-3 py-1.5 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
-                  >
-                    {k}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {value.map((row, i) => (
-                <tr
-                  key={i}
-                  className="border-t border-border/60 odd:bg-background even:bg-muted/40 hover:bg-muted/70 transition-colors"
-                >
-                  {keys.map((k) => (
-                    <td key={k} className="px-3 py-1.5 align-top">
-                      <JsonRenderer value={(row as any)[k]} />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-
-    // Generic list
     return (
-      <ul className="list-disc list-inside text-xs space-y-1">
-        {value.map((item, i) => (
-          <li key={i}>
+      <div className="space-y-1">
+        {value.map((item, idx) => (
+          <div key={idx} className="pl-2 border-l border-border">
             <JsonRenderer value={item} />
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     );
   }
 
@@ -370,12 +330,53 @@ export default function HomePage() {
                 className="w-full justify-start text-xs"
                 onClick={() =>
                   runPreset(
-                    "Generate a prioritized remediation plan for production assets, grouped by severity and estimated effort.show affected assets",
+                    "Generate a prioritized remediation plan for production assets, grouped by severity and estimated effort.",
                   )
                 }
               >
                 Complex Remediation Query
               </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs"
+                onClick={() =>
+                  runPreset(
+                    "Find assets that are both internet-facing and running as root, then return only critical or high CVEs with fix guidance.",
+                  )
+                }
+              >
+                Complex Assets with CVE Query
+              </Button>
+
+               <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs"
+                onClick={() =>
+                  runPreset(
+                    "Rank assets by a custom risk score using severity, public exposure, root usage, and critical tags.",
+                  )
+                }
+              >
+                Complex Assets with Risk Assessment
+              </Button> 
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs"
+                onClick={() =>
+                  runPreset(
+                    "find namespace in container assets and using the corresponding cve's find the highest risky namespace.",
+                  )
+                }
+              >
+                Analyze Highrisk namespace
+              </Button> 
+
+              
             </CardContent>
           </Card>
         </div>
