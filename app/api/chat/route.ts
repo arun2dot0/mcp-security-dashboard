@@ -37,32 +37,15 @@ You are a routing assistant for an MCP-powered vulnerability scanner.
 
 You are given:
 - A user request.
-- A list of available MCP tools, including their names and descriptions.
+- MCP for get_security_schema and a query_security_graph
 
-These tools are already implemented in an MCP server (this is a demo);
+These tools are already implemented in an MCP server;
 you MUST select from these tools when the question is about security.
 
-Typical tools:
-- listcontainerassets / getcontainerassets:
-  Query container assets (services, images, environments, namespaces) and
-  their related CVEs. Use this when the user asks about containers,
-  services, assets, images, environments, namespaces, or "container assets with CVEs".
-- listcves / getcves:
-  Query CVEs directly. Use this when the user asks about CVEs in general,
-  severities, or vulnerability lists without a specific asset focus.
 
 Routing rules:
-- If the user asks about containers, services, assets, images, environments,
-  namespaces, or "container assets with CVEs" or similar, you MUST choose the
-  asset-centric tool from the list (prefer a tool whose name contains
-  "getcontainerassets" or "listcontainerassets").
-- If the user asks about CVEs in general (e.g. list critical CVEs, CVEs by date),
-  you MUST choose the CVE-centric tool (prefer a tool whose name contains
-  "getcves" or "listcves").
-- If the user’s question is even loosely about vulnerabilities, CVEs, security,
-  containers, services, images, environments, or assets, you MUST choose one
-  of the available MCP tools instead of returning null.
-- Only return null when the question is clearly not about these topics at all.
+- Get the Schema to understand how to Costruct the GraphQL query
+- Call the   query_security_graph with the right query
 
 Arguments:
 - For container-asset tools:
@@ -245,21 +228,29 @@ export async function POST(req: NextRequest) {
 
     // Plan + execute
     const { stepResults, plan } = await withMcpClient(async (client) => {
-      const mcpClient = client as unknown as {
-        tools: () => Promise<Record<string, any>>;
-        callTool: (args: { name: string; arguments?: any }) => Promise<any>;
-      };
+     
 
-      const tools = await mcpClient.tools();
+      const tools = await client.tools();
 
-      const plan = await planTools(userText, tools);
+      const schema =
+        await tools.get_security_schema.execute({});
+
+      const backend = process.env.MCP_BACKEND ?? "graph";
+
+      const plan = await planTools(
+        userText,
+        tools,
+        schema,
+        backend
+      );
+      
       console.log("[MCP] Plan:", JSON.stringify(plan, null, 2));
 
       const stepResults: Record<string, any> = {};
 
       for (const step of plan.steps) {
-        const toolDef = tools[step.tool];
-        if (!toolDef) {
+        const tool = tools[step.tool];
+        if (!tool) {
           console.log("[MCP] Tool not found in tools():", step.tool);
           stepResults[step.id] = {
             error: `Tool ${step.tool} not found`,
@@ -273,18 +264,17 @@ export async function POST(req: NextRequest) {
         );
 
         try {
-          const result = await mcpClient.callTool({
-            name: step.tool,
-            arguments: step.arguments,
-          });
+          
 
-          // console.log(
-          //   `[MCP] Result for ${step.id}:`,
-          //   typeof result === "string"
-          //     ? result
-          //     : JSON.stringify(result, null, 2),
-          // );
+          //openai
 
+          if (!tool) {
+            throw new Error(`Tool not found: ${step.tool}`);
+          }
+
+          const result = await tool.execute(step.arguments);
+
+        
           stepResults[step.id] = result;
         } catch (err: any) {
           console.error(`[MCP] Error in step ${step.id}:`, err);
@@ -294,6 +284,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      
       return { stepResults, plan };
     });
 

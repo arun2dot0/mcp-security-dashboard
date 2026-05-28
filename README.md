@@ -92,3 +92,18 @@ npm run dev
 ```
 
 The app will read `MCP_HTTP_URL` to know where the MCP server is listening and `MCP_BACKEND` to decide how to prompt the LLM (REST-style vs GraphQL-style routing).
+
+## Prompts 
+
+### complex
+find public containers with critical cves and have high priority remediations
+Generate a prioritized remediation plan for production assets, grouped by severity and estimated effort.
+For each namespace, summarize the most dangerous asset, the main CVEs, and the most actionable remediation steps
+Generate a prioritized remediation plan for production assets, grouped by severity and estimated effort
+
+### simple
+List all public container assets in prod with CVEs and severity.
+find public containers that are also root --
+find name and environment for container assets with tag auth --
+Give me recent CRITICAL CVEs affecting my containers.
+
