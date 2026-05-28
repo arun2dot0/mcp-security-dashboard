@@ -232,10 +232,17 @@ export async function POST(req: NextRequest) {
 
       const tools = await client.tools();
 
-      const schema =
-        await tools.get_security_schema.execute({});
-
       const backend = process.env.MCP_BACKEND ?? "graph";
+
+      let schema = undefined;
+
+      if (
+        backend === "graph" &&
+        tools.get_security_schema
+      ) {
+        schema =
+          await tools.get_security_schema.execute({});
+      }
 
       const plan = await planTools(
         userText,
