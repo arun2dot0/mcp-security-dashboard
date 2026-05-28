@@ -82,7 +82,7 @@ To route the app through your REST-based MCP server, set:
 
 ```bash
 export MCP_HTTP_URL=http://127.0.0.1:8001/mcp
-export MCP_BACKEND=rest
+export MCP_BACKEND=generic
 ```
 
 Then (re)start the Next.js dev server:

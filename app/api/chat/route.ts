@@ -93,7 +93,7 @@ ${JSON.stringify(toolList, null, 2)}
   
   const backend = process.env.MCP_BACKEND ?? "graph";
 
-  const systemPrompt = backend === "rest" ? systemPromptRest : systemPromptGraph;
+  const systemPrompt = backend === "generic" ? systemPromptRest : systemPromptGraph;
 
   const resp = await openai.chat.completions.create({
     model: "gpt-4o-mini",

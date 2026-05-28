@@ -79,7 +79,7 @@ export async function summarizeForUiWithPlan(
   userText: string,
   plan: Plan,
   stepResults: Record<string, any>,
-  backend: string = "rest",
+  backend: string = "generic",
 ) {
   const systemPrompt =
     backend === "graph"
